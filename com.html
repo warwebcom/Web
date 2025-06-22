@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toko Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a00e0;
+            --secondary-color: #8e2de2;
+            --accent-color: #00c6ff;
+            --text-color: #333;
+            --light-text: #fff;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --neon-effect: 0 0 10px rgba(74, 0, 224, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--light-text);
+        }
+
+        .store-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .flag {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            color: #e60000;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .menu-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .menu-line {
+            width: 25px;
+            height: 3px;
+            background-color: var(--light-text);
+            border-radius: 3px;
+        }
+
+        .menu-line:nth-child(2) {
+            width: 20px;
+        }
+
+        .menu-line:nth-child(3) {
+            width: 15px;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            padding: 20px;
+            z-index: 1001;
+            overflow-y: auto;
+            transition: left 0.4s ease;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .close-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu a {
+            color: var(--light-text);
+            text-decoration: none;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-menu i {
+            font-size: 1.2rem;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Main Content */
+        main {
+            padding: 20px 5%;
+            min-height: calc(100vh - 200px);
+        }
+
+        .section-title {
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+            font-size: 2rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--primary-color);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            margin: 10px auto;
+            border-radius: 2px;
+        }
+
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .empty-products {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .empty-products i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .empty-products p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .product-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .product-card:nth-child(1) { animation-delay: 0.1s; }
+        .product-card:nth-child(2) { animation-delay: 0.2s; }
+        .product-card:nth-child(3) { animation-delay: 0.3s; }
+        .product-card:nth-child(4) { animation-delay: 0.4s; }
+        .product-card:nth-child(5) { animation-delay: 0.5s; }
+        .product-card:nth-child(6) { animation-delay: 0.6s; }
+        .product-card:nth-child(7) { animation-delay: 0.7s; }
+        .product-card:nth-child(8) { animation-delay: 0.8s; }
+
+        .product-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+            background-color: white;
+            padding: 10px;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .image-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            height: 100%;
+        }
+
+        .image-slider::-webkit-scrollbar {
+            display: none;
+        }
+
+        .image-slide {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            position: relative;
+        }
+
+        .product-info {
+            padding: 15px;
+        }
+
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .product-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .product-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .buy-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            border: none;
+            border-radius: 25px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(74, 0, 224, 0.2);
+        }
+
+        .buy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(74, 0, 224, 0.3);
+        }
+
+        /* Product Modal */
+        .product-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1002;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .product-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 800px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.4s ease;
+        }
+
+        .product-modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.8);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .modal-body {
+                flex-direction: row;
+            }
+        }
+
+        .modal-image-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        @media (min-width: 768px) {
+            .modal-image-container {
+                width: 50%;
+                height: auto;
+            }
+        }
+
+        .modal-image-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-image-slider::-webkit-scrollbar {
+            display: none;
+        }
+
+        .modal-image-slide {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 20px;
+            background-color: white;
+        }
+
+        .modal-info {
+            padding: 25px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .modal-info {
+                width: 50%;
+            }
+        }
+
+        .modal-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .modal-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+
+        .modal-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .modal-buy-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .modal-buy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 0, 224, 0.4);
+        }
+
+        /* Footer Styles */
+        footer {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            padding: 40px 5%;
+            margin-top: 50px;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .footer-section {
+            flex: 1;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .footer-logo-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--light-text);
+        }
+
+        .footer-store-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .footer-about {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .footer-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .footer-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background-color: var(--accent-color);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--light-text);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links i {
+            font-size: 0.8rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--light-text);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(74, 0, 224, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Neon Effect */
+        .neon-text {
+            text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color), 0 0 15px var(--primary-color);
+            animation: flicker 1.5s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color), 0 0 15px var(--primary-color);
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 15px;
+            }
+            
+            .product-image-container {
+                height: 150px;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+            
+            .modal-image-container {
+                height: 200px;
+            }
+        }
+
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <img src="https://via.placeholder.com/40" alt="Logo Toko" class="logo-img">
+            <span class="store-name">Nama Toko</span>
+            <div class="flag">IDN</div>
+        </div>
+        <div class="menu-btn" id="menuBtn">
+            <div class="menu-line"></div>
+            <div class="menu-line"></div>
+            <div class="menu-line"></div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <div class="close-btn" id="closeBtn">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="mailto:warz@gmail.com"><i class="fas fa-envelope"></i> Support</a></li>
+            <li><a href="#"><i class="fas fa-info-circle"></i> Tentang Kami</a></li>
+            <li><a href="#"><i class="fas fa-question-circle"></i> FAQ</a></li>
+            <li><a href="#"><i class="fas fa-shipping-fast"></i> Pengiriman</a></li>
+        </ul>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <main>
+        <h1 class="section-title neon-text">STOK KAMI</h1>
+        
+        <div class="products-grid" id="productsGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="product-modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </div>
+            <div class="modal-body">
+                <div class="modal-image-container">
+                    <div class="modal-image-slider" id="modalImageSlider">
+                        <!-- Images will be added dynamically -->
+                    </div>
+                </div>
+                <div class="modal-info">
+                    <h2 class="modal-name" id="modalName">Nama Produk</h2>
+                    <div class="modal-price" id="modalPrice">Rp 0</div>
+                    <p class="modal-description" id="modalDescription">Deskripsi produk akan muncul di sini.</p>
+                    <a href="#" class="modal-buy-btn" id="modalBuyBtn">
+                        <i class="fab fa-whatsapp"></i> Beli via WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="https://via.placeholder.com/50" alt="Logo Toko" class="footer-logo-img">
+                    <span class="footer-store-name">Nama Toko</span>
+                </div>
+                <p class="footer-about">Toko online kami menyediakan berbagai produk berkualitas dengan harga terjangkau. Pengiriman cepat dan aman ke seluruh Indonesia.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Tautan Cepat</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Beranda</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Produk</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Tentang Kami</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Kontak</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Kebijakan Privasi</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Kontak Kami</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Alamat Toko</a></li>
+                    <li><a href="mailto:warz@gmail.com"><i class="fas fa-envelope"></i> warz@gmail.com</a></li>
+                    <li><a href="#"><i class="fas fa-phone-alt"></i> +62 812 3456 7890</a></li>
+                    <li><a href="#"><i class="fas fa-clock"></i> Buka: 09:00 - 17:00</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Nama Toko. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBcPLQVDRm8WfZRD3HtaT6ZQpyN9QY56M",
+            authDomain: "penyimpanan-7e4c9.firebaseapp.com",
+            projectId: "penyimpanan-7e4c9",
+            storageBucket: "penyimpanan-7e4c9.appspot.com",
+            messagingSenderId: "376748419084",
+            appId: "1:376748419084:web:33165c13d26d15fce0e629",
+            measurementId: "G-FL64XET414"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // DOM Elements
+        const menuBtn = document.getElementById('menuBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const productsGrid = document.getElementById('productsGrid');
+        const productModal = document.getElementById('productModal');
+        const modalClose = document.getElementById('modalClose');
+        const modalImageSlider = document.getElementById('modalImageSlider');
+        const modalName = document.getElementById('modalName');
+        const modalPrice = document.getElementById('modalPrice');
+        const modalDescription = document.getElementById('modalDescription');
+        const modalBuyBtn = document.getElementById('modalBuyBtn');
+
+        // Toggle Sidebar
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            productModal.classList.remove('active');
+        });
+
+        // Close Modal
+        modalClose.addEventListener('click', () => {
+            productModal.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Fetch Products from Firestore
+        function fetchProducts() {
+            db.collection('products').where('published', '==', true).get()
+                .then((querySnapshot) => {
+                    productsGrid.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        productsGrid.innerHTML = `
+                            <div class="empty-products">
+                                <i class="fas fa-box-open"></i>
+                                <p>Stok kami sedang kosong. Silakan kembali lagi nanti.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const product = doc.data();
+                        displayProduct(product, doc.id);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error getting products: ", error);
+                    productsGrid.innerHTML = `
+                        <div class="empty-products">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Gagal memuat produk. Silakan coba lagi nanti.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Display Product
+        function displayProduct(product, productId) {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.dataset.id = productId;
+            
+            let imagesHTML = '';
+            if (product.images && product.images.length > 0) {
+                imagesHTML = `
+                    <div class="image-slider">
+                        <div class="image-slide">
+                            <img src="${product.images[0]}" alt="${product.name}" class="product-image">
+                        </div>
+                    </div>
+                `;
+            } else {
+                imagesHTML = `
+                    <div class="image-slider">
+                        <div class="image-slide">
+                            <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="product-image">
+                        </div>
+                    </div>
+                `;
+            }
+            
+            productCard.innerHTML = `
+                <div class="product-image-container">
+                    ${imagesHTML}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">${product.name}</h3>
+                    <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                    <p class="product-description">${product.description.substring(0, 100)}${product.description.length > 100 ? '...' : ''}</p>
+                    <a href="#" class="buy-btn">Lihat Detail</a>
+                </div>
+            `;
+            
+            productCard.addEventListener('click', (e) => {
+                e.preventDefault();
+                openProductModal(product, productId);
+            });
+            
+            productsGrid.appendChild(productCard);
+        }
+
+        // Open Product Modal
+        function openProductModal(product, productId) {
+            // Clear previous images
+            modalImageSlider.innerHTML = '';
+            
+            // Add images to slider
+            if (product.images && product.images.length > 0) {
+                product.images.forEach(imageUrl => {
+                    modalImageSlider.innerHTML += `
+                        <div class="modal-image-slide">
+                            <img src="${imageUrl}" alt="${product.name}" class="modal-image">
+                        </div>
+                    `;
+                });
+            } else {
+                modalImageSlider.innerHTML = `
+                    <div class="modal-image-slide">
+                        <img src="https://via.placeholder.com/600x400?text=No+Image" alt="No Image" class="modal-image">
+                    </div>
+                `;
+            }
+            
+            // Set product info
+            modalName.textContent = product.name;
+            modalPrice.textContent = `Rp ${product.price.toLocaleString('id-ID')}`;
+            modalDescription.textContent = product.description;
+            
+            // Set WhatsApp link
+            const whatsappNumber = '6281234567890'; // Replace with your WhatsApp number
+            const message = `Halo, saya ingin memesan produk:\n\n*${product.name}*\nHarga: Rp ${product.price.toLocaleString('id-ID')}\n\nDeskripsi: ${product.description.substring(0, 100)}...`;
+            const encodedMessage = encodeURIComponent(message);
+            modalBuyBtn.href = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            // Open modal
+            productModal.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        // Fetch store info
+        function fetchStoreInfo() {
+            db.collection('store').doc('info').get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const storeInfo = doc.data();
+                        
+                        // Update store name in header
+                        const storeNameElements = document.querySelectorAll('.store-name, .footer-store-name');
+                        storeNameElements.forEach(el => {
+                            el.textContent = storeInfo.name || 'Nama Toko';
+                        });
+                        
+                        // Update store logo
+                        const logoElements = document.querySelectorAll('.logo-img, .footer-logo-img');
+                        logoElements.forEach(el => {
+                            if (storeInfo.logo) {
+                                el.src = storeInfo.logo;
+                            }
+                        });
+                        
+                        // Update footer about
+                        const footerAbout = document.querySelector('.footer-about');
+                        if (storeInfo.about) {
+                            footerAbout.textContent = storeInfo.about;
+                        }
+                        
+                        // Update copyright year
+                        const copyrightElement = document.querySelector('.footer-bottom p');
+                        if (copyrightElement) {
+                            const year = new Date().getFullYear();
+                            copyrightElement.textContent = `© ${year} ${storeInfo.name || 'Nama Toko'}. All Rights Reserved.`;
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting store info: ", error);
+                });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProducts();
+            fetchStoreInfo();
+        });
+    </script>
+</body>
+</html>
